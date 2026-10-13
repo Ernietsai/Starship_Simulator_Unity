@@ -1,0 +1,29 @@
+behaviors:
+  RocketLanding:
+    trainer_type: ppo
+    hyperparameters:
+      batch_size: 2048         # 增加 batch 提高穩定性，適合 24 維度動作
+      buffer_size: 20480       # 緩衝區大小，確保有足夠樣本進行更新
+      learning_rate: 3.0e-4    # 標準學習率
+      beta: 5.0e-3             # 稍高的熵權重，鼓勵 AI 在初期嘗試不同的引擎偏轉
+      epsilon: 0.2
+      lambd: 0.95
+      num_epoch: 3
+      learning_rate_schedule: linear
+    network_settings:
+      normalize: true          # 重要：對觀察值進行規範化，處理不同量級的物理量（位置 vs 速度）
+      hidden_units: 512        # 增加神經元數量以處理複雜的 24 動作邏輯
+      num_layers: 3            # 稍微深一點的網路
+      vis_encode_type: simple
+    reward_signals:
+      extrinsic:
+        gamma: 0.99            # 長期獎勵權重
+        strength: 1.0
+      # 建議加入好奇心機制，如果火箭在初期完全找不到目標
+      # curiosity:
+      #   strength: 0.02
+      #   gamma: 0.99
+      #   learning_rate: 3.0e-4
+    max_steps: 10000000        # 總訓練步數
+    time_horizon: 128          # AI 每次考慮的未來步數
+    summary_freq: 20000        # 每 2 萬步輸出一次統計

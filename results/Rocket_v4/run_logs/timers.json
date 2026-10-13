@@ -1,0 +1,73 @@
+{
+    "name": "root",
+    "metadata": {
+        "timer_format_version": "0.1.0",
+        "start_time_seconds": "1766120362",
+        "python_version": "3.10.8 | packaged by conda-forge | (main, Nov 24 2022, 14:07:00) [MSC v.1916 64 bit (AMD64)]",
+        "command_line_arguments": "C:\\Users\\GF75\\.conda\\envs\\starship\\Scripts\\mlagents-learn config/RocketLanding.yaml --run-id=Rocket_v4 --resume",
+        "mlagents_version": "1.1.0",
+        "mlagents_envs_version": "1.1.0",
+        "communication_protocol_version": "1.5.0",
+        "pytorch_version": "2.8.0+cpu",
+        "numpy_version": "1.23.5",
+        "end_time_seconds": "1766120431"
+    },
+    "total": 68.29729210003279,
+    "count": 1,
+    "self": 10.007447099778801,
+    "children": {
+        "run_training.setup": {
+            "total": 0.15510900015942752,
+            "count": 1,
+            "self": 0.15510900015942752
+        },
+        "TrainerController.start_learning": {
+            "total": 58.13473600009456,
+            "count": 1,
+            "self": 0.0012481999583542347,
+            "children": {
+                "TrainerController._reset_env": {
+                    "total": 19.358247300144285,
+                    "count": 1,
+                    "self": 19.358247300144285
+                },
+                "TrainerController.advance": {
+                    "total": 38.510821599978954,
+                    "count": 1,
+                    "self": 2.2300053387880325e-05,
+                    "children": {
+                        "env_step": {
+                            "total": 38.510799299925566,
+                            "count": 1,
+                            "self": 38.510781900025904,
+                            "children": {
+                                "SubprocessEnvManager._take_step": {
+                                    "total": 1.7399899661540985e-05,
+                                    "count": 1,
+                                    "self": 1.7399899661540985e-05
+                                }
+                            }
+                        }
+                    }
+                },
+                "trainer_threads": {
+                    "total": 1.6998965293169022e-06,
+                    "count": 1,
+                    "self": 1.6998965293169022e-06
+                },
+                "TrainerController._save_models": {
+                    "total": 0.26441720011644065,
+                    "count": 1,
+                    "self": 0.0028861002065241337,
+                    "children": {
+                        "RLTrainer._checkpoint": {
+                            "total": 0.2615310999099165,
+                            "count": 1,
+                            "self": 0.2615310999099165
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

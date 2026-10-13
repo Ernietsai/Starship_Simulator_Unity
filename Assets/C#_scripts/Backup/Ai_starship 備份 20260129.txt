@@ -1,0 +1,316 @@
+using UnityEngine;
+using Unity.MLAgents;
+using Unity.MLAgents.Actuators;
+using Unity.MLAgents.Sensors;
+using System.Collections.Generic;
+
+public class RocketAgent : Agent
+{
+    [Header("Rocket Components")]
+    [HideInInspector]
+    public Rigidbody rb;
+    public Transform target;
+    public Transform routeFloor;
+
+    [Header("Target Random Range")]
+    public float minTargetDistance;
+    public float maxTargetDistance;
+
+    [Header("Main Engines (6 Engines)")]
+    public List<RocketEngine> engines = new List<RocketEngine>(6);
+    public float maxEngineThrust = 50f;
+    public float maxGimbalAngle = 15f; // 引擎最大偏轉角度
+
+    [Header("RCS System")]
+    public float rcsTorqueForce = 10f;  // RCS 旋轉力矩
+    public float rcsTranslateForce = 2f; // RCS 微量平移力
+
+    private Vector3 startPos;
+    private Quaternion startRot;
+    private float thrustSum;
+    private float rewardedPoint = 0;
+    private float lastDistance;
+
+    public override void Initialize()
+    {
+        startPos = transform.localPosition;
+        startRot = transform.localRotation;
+        rb = GetComponent<Rigidbody>();
+    }
+
+    public override void OnEpisodeBegin()
+    {
+        rb.linearVelocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+        transform.localPosition = startPos;
+        transform.localRotation = startRot;
+
+        // 建議在重置時給目標點一點隨機位移，訓練出來的模型更強大
+        float targetDistance = Random.Range(minTargetDistance, maxTargetDistance);
+        float targetDirection = Random.Range(0, 2*Mathf.PI);
+        target.transform.localPosition = new Vector3(startPos.x + targetDistance * Mathf.Cos(targetDirection), 0, startPos.y + targetDistance * Mathf.Sin(targetDirection));
+        // 設定路線地面位置
+        routeFloor.transform.localPosition = new Vector3(startPos.x + targetDistance * 0.5f * Mathf.Cos(targetDirection), routeFloor.transform.position.y, startPos.y + targetDistance * 0.5f * Mathf.Sin(targetDirection));
+        routeFloor.transform.LookAt(transform.TransformPoint(new Vector3(startPos.x, routeFloor.transform.localPosition.y, startPos.z)));
+        routeFloor.transform.RotateAround(routeFloor.transform.position, new Vector3(0, 1, 0), 90);
+        routeFloor.transform.localScale = new Vector3(targetDistance * 0.1f + 2, routeFloor.transform.localScale.y, routeFloor.transform.localScale.z);
+
+        //計算獎勵用變數設定
+        lastDistance = Vector3.Distance(transform.localPosition, target.transform.localPosition);
+}
+
+    public override void CollectObservations(VectorSensor sensor)
+    {
+        // 1. 相對於火箭的目標位置 (3維) - 這是導航的核心
+        Vector3 localTargetPos = transform.InverseTransformPoint(target.position);
+        sensor.AddObservation(localTargetPos / 500f);
+
+        // 2. 局部速度 (3維) - 感受側滑
+        Vector3 localVelocity = transform.InverseTransformDirection(rb.linearVelocity);
+        sensor.AddObservation(localVelocity / 50f);
+
+        // 3. 角速度 (3維) - 防止瘋狂旋轉
+        sensor.AddObservation(rb.angularVelocity / 10f);
+
+        // 4. 火箭在世界中的朝向 (3維) - 讓 AI 知道哪裡是「上」，才能學會直立
+        sensor.AddObservation(transform.up);
+
+        // 5. 目標與火箭的向量差 (3維) - 輔助導航
+        Vector3 worldDiff = target.position - transform.position;
+        sensor.AddObservation(worldDiff / 500f);
+
+        // 6. 距離 (1維) - 簡單明確的目標感
+        sensor.AddObservation(Vector3.Distance(transform.position, target.position) / 500f);
+
+        // 總計：3+3+3+3+3+1 = 16 維
+        /*
+        // 速度轉換成局部座標，讓 AI 更有方向感
+        Vector3 localVelocity = transform.InverseTransformDirection(rb.linearVelocity);
+        // --- 基礎觀察(16維) ---              舊：(13維)
+        sensor.AddObservation((transform.localPosition - target.localPosition)/maxTargetDistance); // 相對位置 (3)
+        sensor.AddObservation(rb.linearVelocity); // 線速度 (3)
+        sensor.AddObservation(rb.angularVelocity); // 角速度 (3)
+        sensor.AddObservation(transform.up); // 火箭朝向 (3)
+        sensor.AddObservation(Vector3.Distance(transform.localPosition, target.localPosition)); // 距離 (1)
+        sensor.AddObservation(localVelocity); // 局部速度 (3)
+        */
+    }
+
+    public override void OnActionReceived(ActionBuffers actions)
+    {
+        var continuousActions = actions.ContinuousActions;
+        thrustSum = 0;
+        // ==========================================================
+        // 1. 控制 6 具主引擎 (Action Index 0 - 17)
+        // 每個引擎現在分配 3 個動作：[0]推力, [1]偏轉幅度, [2]偏轉方位
+        // ==========================================================
+        for (int i = 0; i < engines.Count; i++)
+        {
+            int baseIdx = i * 3;
+
+            // 推力控制: 映射 [-1, 1] 到 [0, 1] 再乘上最大推力
+            float thrustPercentage = (continuousActions[baseIdx] + 1f) / 2f;
+            engines[i].currentThrust = thrustPercentage * maxEngineThrust;
+            thrustSum += engines[i].currentThrust;
+
+            // 偏轉控制: 映射 [-1, 1] 到 [-maxGimbalAngle, maxGimbalAngle]
+            engines[i].currentGimbal.x = continuousActions[baseIdx + 1] * maxGimbalAngle;
+            engines[i].currentGimbal.y = continuousActions[baseIdx + 2] * maxGimbalAngle;
+
+            // 計算推力方向 (在引擎局部座標系中旋轉)
+            Quaternion gimbalRotation = Quaternion.Euler(engines[i].currentGimbal.x, 0, engines[i].currentGimbal.y);
+            Vector3 thrustDirection = engines[i].engineTransform.rotation * gimbalRotation * Vector3.back;
+
+            // 施加推力 (由引擎位置向火箭上方施力)
+            rb.AddForceAtPosition(thrustDirection * engines[i].currentThrust, engines[i].engineTransform.position);
+
+            // 視覺呈現（可選）：可以在這裡畫出 Debug.DrawRay 看看推力方向
+            Debug.DrawRay(engines[i].engineTransform.position, -thrustDirection * (1f + thrustPercentage*2f), Color.red);
+
+        }
+        //Debug.Log("平均推力：" + (thrustSum / engines.Count));
+
+        // ==========================================================
+        // 2. 控制 RCS 系統 (Action Index 18 - 23)
+        // [旋轉X, 旋轉Y, 旋轉Z, 平移X, 平移Y, 平移Z]
+        // ==========================================================
+
+        // RCS 旋轉 (扭矩)
+        Vector3 rcsTorque = new Vector3(continuousActions[18], continuousActions[19], continuousActions[20]) * rcsTorqueForce;
+        rb.AddRelativeTorque(rcsTorque);
+
+        // RCS 平移 (微調位置)
+        Vector3 rcsTranslate = new Vector3(continuousActions[21], continuousActions[22], continuousActions[23]) * rcsTranslateForce;
+        rb.AddRelativeForce(rcsTranslate);
+
+        // ==========================================================
+        // 3. 獎勵計算
+        // ==========================================================
+        ApplyRewards();
+    }
+    
+    private void ApplyRewards()
+    {
+        float distance = Vector3.Distance(transform.localPosition, target.localPosition);
+        float uprightness = Vector3.Dot(transform.up, Vector3.up);
+        float currentY = transform.position.y;
+
+        /*// 距離獎勵 (引導向目標靠近)
+        AddReward(0.1f * (1 - (distance / maxTargetDistance)));
+        rewardedPoint += 0.1f * (1 - (distance / maxTargetDistance));*/
+        
+        // --- 1. 距離獎勵 (改用位移進步，打破徘徊陷阱) ---
+        float deltaDistance = lastDistance - distance;
+        if (deltaDistance > 0)
+            AddReward(deltaDistance * 1.0f); // 只有靠近時給分
+        else
+            AddReward(deltaDistance * 0.5f); // 遠離時扣分稍微輕一點點
+        lastDistance = distance;
+
+        /*// 穩定獎勵 (鼓勵保持直立)
+        if (uprightness > 0.95f)
+        {
+            AddReward(0.01f);
+            rewardedPoint += 0.1f;
+        }*/
+        //直立獎勵
+        AddReward(0.002f * uprightness);
+        rewardedPoint += 0.002f * uprightness;
+
+        // 穩定性懲罰：稍微降低，給予它傾斜轉向的空間，但仍防止瘋狂旋轉
+        // 使用 sqrMagnitude 會比 magnitude 更嚴厲地懲罰「高速旋轉」
+        AddReward(-0.003f * rb.angularVelocity.sqrMagnitude);  //-0.001f
+        rewardedPoint += -0.003f * rb.angularVelocity.sqrMagnitude;
+        //Debug.Log("角速度:" + rb.angularVelocity.magnitude);
+
+        // 速度引導：如果速度方向是朝向目標的且未到目標距離的一半，給予微量獎勵
+        Vector3 dirToTarget = (target.localPosition - transform.localPosition).normalized;
+        float alignment = Vector3.Dot(rb.linearVelocity.normalized, dirToTarget);
+        if ((alignment > 0) && (Vector3.Dot((transform.localPosition - startPos), (target.localPosition - startPos).normalized * 2) <= Vector3.Distance(target.localPosition, startPos)))
+        {
+            AddReward(0.001f * alignment);
+            rewardedPoint += 0.001f * alignment;
+        }
+
+        // 失敗判定
+        // 如果飛得太遠(假設目標在原點，超過 500 公尺就重置)，失敗
+        if (uprightness < -0.5f || distance > maxTargetDistance * 2 || currentY < -10f)  //(uprightness < -0.5f || distance > maxTargetDistance * 2)
+        {
+            // 根據失敗程度給予處罰（越遠、越歪扣越多）
+            float penalty = -20f;  //-10f - (distance / 500f);
+            SetReward(penalty);
+            EndEpisode();
+            
+            if (uprightness < -0.5f)
+                Debug.Log("傾角過大重置！總獎勵：" + (rewardedPoint) + "，設定獎勵：" + penalty);
+            else if (distance > maxTargetDistance * 2)
+                Debug.Log("距離過遠重置！總獎勵：" + (rewardedPoint) + "，設定獎勵：" + penalty);
+            else
+                Debug.Log("高度過低重置！總獎勵：" + (rewardedPoint) + "，設定獎勵：" + penalty);
+            //Debug.Log("平均推力：" + (thrustSum / engines.Count));
+            
+            rewardedPoint = 0;
+            return;
+        }
+
+        // 成功判定 (非常接近目標且速度極低)
+        if (distance < 3f && rb.linearVelocity.magnitude < 0.2f && uprightness > 0.98f)
+        {
+            SetReward(100f);
+            EndEpisode();
+            Debug.Log("成功著陸！總獎勵：" + rewardedPoint + "，設定獎勵：100");
+            //Debug.Log("平均推力：" + (thrustSum / engines.Count));
+            rewardedPoint = 0;
+        }
+    }
+
+    // 讓你可以手動測試 (選用)
+    public override void Heuristic(in ActionBuffers actionsOut)
+    {
+        
+        var continuousActionsOut = actionsOut.ContinuousActions;
+        // 範例：按住 Space 鍵讓所有引擎全開
+        if (Input.GetKey(KeyCode.Space))
+        {
+            for (int i = 0; i < 6; i++) continuousActionsOut[i * 3] = 1.0f;
+        }
+        /*if (Input.GetKey(KeyCode.W))
+        {
+            
+            for (int i = 0; i < engines.Count; i++)
+            {
+                int baseIdx = 0;
+                float[] continuousActions = {1, 0, 0};
+
+                // 推力控制: 映射 [-1, 1] 到 [0, 1] 再乘上最大推力
+                float thrustPercentage = (continuousActions[baseIdx] + 1f) / 2f;
+                engines[i].currentThrust = thrustPercentage * maxEngineThrust;
+
+                // 偏轉控制: 映射 [-1, 1] 到 [-maxGimbalAngle, maxGimbalAngle]
+                engines[i].currentGimbal.x = continuousActions[baseIdx + 1] * maxGimbalAngle;
+                engines[i].currentGimbal.y = continuousActions[baseIdx + 2] * maxGimbalAngle;
+
+                // 計算推力方向 (在引擎局部座標系中旋轉)
+                Quaternion gimbalRotation = Quaternion.Euler(engines[i].currentGimbal.x, 0, engines[i].currentGimbal.y);
+                Vector3 thrustDirection = engines[i].engineTransform.rotation * gimbalRotation * Vector3.back;
+
+                // 施加推力 (由引擎位置向火箭上方施力)
+                rb.AddForceAtPosition(thrustDirection * engines[i].currentThrust, engines[i].engineTransform.position);
+
+                // 視覺呈現（可選）：可以在這裡畫出 Debug.DrawRay 看看推力方向
+                Debug.DrawRay(engines[i].engineTransform.position, -thrustDirection * 2f, Color.red);
+
+            }
+        }*/
+
+        if (Input.GetKey(KeyCode.R))
+        {
+            Debug.Log("已手動強制結束");
+            //SetReward(-1.0f);
+            EndEpisode();
+            //return;
+        }
+        
+    }
+
+    /*
+    void OnDrawGizmos()
+    {
+        if (rb != null)
+        {
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawSphere(transform.TransformPoint(rb.centerOfMass), 0.2f);
+        }
+    }*/
+
+    private void FixedUpdate()
+    {
+        /*
+        // 1. 取得世界座標的高度 (假設地面在 Y = 0)
+        float currentY = transform.position.y;
+
+        // 2. 如果掉到地面以下（例如 -5 公尺），強制結束
+        if (currentY < -10f)
+        {
+            //Debug.Log("由於高度過低，已強制結束，高度：" + currentY);
+            SetReward(-1.0f); // 給予懲罰
+            EndEpisode();     // 結束這回合
+            Debug.Log("回合失敗重置！總獎勵：" + (rewardedPoint - 1));
+            rewardedPoint = 0;
+            return;
+        }
+
+
+        // 3. 如果飛得太遠 (假設目標在原點，超過 500 公尺就重置)
+        if (Vector3.Distance(transform.position, target.position) > maxTargetDistance * 2)
+        {
+            //Debug.Log("由於距離過遠，已強制結束，距離：" + Vector3.Distance(transform.position, target.position));
+            SetReward(-1.0f);
+            EndEpisode();
+            Debug.Log("回合失敗重置！總獎勵：" + (rewardedPoint - 1));
+            rewardedPoint = 0;
+            return;
+        }
+        */
+    }
+}

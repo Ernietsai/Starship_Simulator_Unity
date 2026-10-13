@@ -1,0 +1,29 @@
+{
+    "RocketLanding": {
+        "checkpoints": [
+            {
+                "steps": 67154,
+                "file_path": "results\\Rocket_Fix_1\\RocketLanding\\RocketLanding-67154.onnx",
+                "reward": -1.0,
+                "creation_time": 1767438903.2518127,
+                "auxillary_file_paths": [
+                    "results\\Rocket_Fix_1\\RocketLanding\\RocketLanding-67154.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 67154,
+            "file_path": "results\\Rocket_Fix_1\\RocketLanding.onnx",
+            "reward": -1.0,
+            "creation_time": 1767438903.2518127,
+            "auxillary_file_paths": [
+                "results\\Rocket_Fix_1\\RocketLanding\\RocketLanding-67154.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "1.1.0",
+        "torch_version": "2.8.0+cpu"
+    }
+}

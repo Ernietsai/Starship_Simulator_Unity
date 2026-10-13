@@ -1,0 +1,42 @@
+{
+    "name": "root",
+    "metadata": {
+        "timer_format_version": "0.1.0",
+        "start_time_seconds": "1766117729",
+        "python_version": "3.10.8 | packaged by conda-forge | (main, Nov 24 2022, 14:07:00) [MSC v.1916 64 bit (AMD64)]",
+        "command_line_arguments": "C:\\Users\\GF75\\.conda\\envs\\starship\\Scripts\\mlagents-learn config/RocketLanding.yaml --run-id=Rocket_v3",
+        "mlagents_version": "1.1.0",
+        "mlagents_envs_version": "1.1.0",
+        "communication_protocol_version": "1.5.0",
+        "pytorch_version": "2.8.0+cpu",
+        "numpy_version": "1.23.5",
+        "end_time_seconds": "1766117797"
+    },
+    "total": 67.65783630008809,
+    "count": 1,
+    "self": 0.012657899875193834,
+    "children": {
+        "run_training.setup": {
+            "total": 0.1280830001924187,
+            "count": 1,
+            "self": 0.1280830001924187
+        },
+        "TrainerController.start_learning": {
+            "total": 67.51709540002048,
+            "count": 1,
+            "self": 0.00018500001169741154,
+            "children": {
+                "TrainerController._reset_env": {
+                    "total": 67.51685200002976,
+                    "count": 1,
+                    "self": 67.51685200002976
+                },
+                "TrainerController._save_models": {
+                    "total": 5.8399979025125504e-05,
+                    "count": 1,
+                    "self": 5.8399979025125504e-05
+                }
+            }
+        }
+    }
+}

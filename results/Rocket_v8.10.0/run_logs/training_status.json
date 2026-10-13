@@ -1,0 +1,110 @@
+{
+    "RocketLanding": {
+        "checkpoints": [
+            {
+                "steps": 3499915,
+                "file_path": "results\\Rocket_v8.10.0\\RocketLanding\\RocketLanding-3499915.onnx",
+                "reward": 617.0979410345836,
+                "creation_time": 1770990708.288245,
+                "auxillary_file_paths": [
+                    "results\\Rocket_v8.10.0\\RocketLanding\\RocketLanding-3499915.pt"
+                ]
+            },
+            {
+                "steps": 3999982,
+                "file_path": "results\\Rocket_v8.10.0\\RocketLanding\\RocketLanding-3999982.onnx",
+                "reward": 631.6890543206879,
+                "creation_time": 1770991475.4953928,
+                "auxillary_file_paths": [
+                    "results\\Rocket_v8.10.0\\RocketLanding\\RocketLanding-3999982.pt"
+                ]
+            },
+            {
+                "steps": 4499983,
+                "file_path": "results\\Rocket_v8.10.0\\RocketLanding\\RocketLanding-4499983.onnx",
+                "reward": 639.8331240567294,
+                "creation_time": 1770992339.0334525,
+                "auxillary_file_paths": [
+                    "results\\Rocket_v8.10.0\\RocketLanding\\RocketLanding-4499983.pt"
+                ]
+            },
+            {
+                "steps": 4999994,
+                "file_path": "results\\Rocket_v8.10.0\\RocketLanding\\RocketLanding-4999994.onnx",
+                "reward": 643.3077192882563,
+                "creation_time": 1770993137.755226,
+                "auxillary_file_paths": [
+                    "results\\Rocket_v8.10.0\\RocketLanding\\RocketLanding-4999994.pt"
+                ]
+            },
+            {
+                "steps": 5499953,
+                "file_path": "results\\Rocket_v8.10.0\\RocketLanding\\RocketLanding-5499953.onnx",
+                "reward": 631.8381009905526,
+                "creation_time": 1770994097.9717073,
+                "auxillary_file_paths": [
+                    "results\\Rocket_v8.10.0\\RocketLanding\\RocketLanding-5499953.pt"
+                ]
+            },
+            {
+                "steps": 5999948,
+                "file_path": "results\\Rocket_v8.10.0\\RocketLanding\\RocketLanding-5999948.onnx",
+                "reward": 635.955546985973,
+                "creation_time": 1770994953.0192423,
+                "auxillary_file_paths": [
+                    "results\\Rocket_v8.10.0\\RocketLanding\\RocketLanding-5999948.pt"
+                ]
+            },
+            {
+                "steps": 6499962,
+                "file_path": "results\\Rocket_v8.10.0\\RocketLanding\\RocketLanding-6499962.onnx",
+                "reward": 632.2803586835238,
+                "creation_time": 1770995832.2518363,
+                "auxillary_file_paths": [
+                    "results\\Rocket_v8.10.0\\RocketLanding\\RocketLanding-6499962.pt"
+                ]
+            },
+            {
+                "steps": 6645481,
+                "file_path": "results\\Rocket_v8.10.0\\RocketLanding\\RocketLanding-6645481.onnx",
+                "reward": 632.8664639565797,
+                "creation_time": 1770996139.1370656,
+                "auxillary_file_paths": [
+                    "results\\Rocket_v8.10.0\\RocketLanding\\RocketLanding-6645481.pt"
+                ]
+            },
+            {
+                "steps": 6650320,
+                "file_path": "results\\Rocket_v8.10.0\\RocketLanding\\RocketLanding-6650320.onnx",
+                "reward": 625.0926145788742,
+                "creation_time": 1770996208.9108374,
+                "auxillary_file_paths": [
+                    "results\\Rocket_v8.10.0\\RocketLanding\\RocketLanding-6650320.pt"
+                ]
+            },
+            {
+                "steps": 6876081,
+                "file_path": "results\\Rocket_v8.10.0\\RocketLanding\\RocketLanding-6876081.onnx",
+                "reward": null,
+                "creation_time": 1772075453.9769673,
+                "auxillary_file_paths": [
+                    "results\\Rocket_v8.10.0\\RocketLanding\\RocketLanding-6876081.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 6876081,
+            "file_path": "results\\Rocket_v8.10.0\\RocketLanding.onnx",
+            "reward": null,
+            "creation_time": 1772075453.9769673,
+            "auxillary_file_paths": [
+                "results\\Rocket_v8.10.0\\RocketLanding\\RocketLanding-6876081.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "1.1.0",
+        "torch_version": "2.8.0+cpu"
+    }
+}

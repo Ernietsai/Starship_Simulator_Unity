@@ -1,0 +1,5 @@
+d:
+cd "Ernie\Unity\Starship Simulator"
+conda activate starship
+set PYTHONUTF8 = 1
+echo 手動輸入"mlagents-learn config/RocketLanding.yaml --run-id=Rocket_v7.4.0 --resume"以開始訓練...
